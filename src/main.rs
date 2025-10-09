@@ -9,11 +9,7 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut buf = [0; 512];
-                stream.read_exact(&mut buf).unwrap();
-
-                println!("received request: {}", String::from_utf8_lossy(&buf[..]));
-
+                println!("New connection: {}", stream.peer_addr().unwrap());
                 stream.write_all(b"+PONG\r\n").unwrap();
             }
             Err(e) => {
