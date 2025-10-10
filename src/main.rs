@@ -6,6 +6,7 @@ use tokio::sync::Mutex;
 
 use crate::memory::Memory;
 
+mod command;
 mod memory;
 mod resp_parser;
 
@@ -33,47 +34,7 @@ async fn process(mut socket: TcpStream, memory: Arc<Mutex<Memory>>) {
         }
 
         let content = resp_parser::parse(&buffer[..bytes_read]);
-        let response = command_handler(content, memory.clone()).await;
+        let response = command::handler(content, memory.clone()).await;
         socket.write_all(response.as_bytes()).await.unwrap();
-    }
-}
-
-async fn command_handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String {
-    if command.is_empty() {
-        return "-ERR unknown command\r\n".to_string();
-    }
-
-    match command[0].to_uppercase().as_str() {
-        "PING" => "+PONG\r\n".to_string(),
-        "ECHO" => {
-            if command.len() < 2 {
-                "-ERR wrong number of arguments for 'echo' command\r\n".to_string()
-            } else {
-                format!("+{}\r\n", command[1])
-            }
-        }
-        "SET" => {
-            if command.len() < 3 {
-                "-ERR wrong number of arguments for 'set' command\r\n".to_string()
-            } else {
-                memory
-                    .lock()
-                    .await
-                    .set(command[1].clone(), command[2].clone());
-                "+OK\r\n".to_string()
-            }
-        }
-        "GET" => {
-            if command.len() < 2 {
-                "-ERR wrong number of arguments for 'get' command\r\n".to_string()
-            } else {
-                let mem = memory.lock().await;
-                match mem.get(&command[1]) {
-                    Some(value) => format!("+{}\r\n", value),
-                    None => "$-1\r\n".to_string(),
-                }
-            }
-        }
-        _ => "-ERR unknown command\r\n".to_string(),
     }
 }
