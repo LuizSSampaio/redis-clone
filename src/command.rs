@@ -21,15 +21,36 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
             if command.len() < 3 {
                 return "-ERR wrong number of arguments for 'set' command\r\n".to_string();
             }
+
+            let duration = match command.get(3) {
+                Some(flag) => {
+                    let time = match command[4].parse::<u64>() {
+                        Ok(time) => time,
+                        Err(_) => {
+                            return "-ERR value is not an integer or out of range\r\n".to_string();
+                        }
+                    };
+
+                    match flag.to_uppercase().as_str() {
+                        "EX" => Some(std::time::Duration::from_secs(time)),
+                        "PX" => Some(std::time::Duration::from_millis(time)),
+                        _ => {
+                            return "-ERR syntax error\r\n".to_string();
+                        }
+                    }
+                }
+                None => None,
+            };
+
             let mut mem = memory.lock().await;
-            mem.set(command[1].clone(), command[2].clone());
+            mem.set(command[1].clone(), command[2].clone(), duration);
             "+OK\r\n".to_string()
         }
         "GET" => {
             if command.len() < 2 {
                 return "-ERR wrong number of arguments for 'get' command\r\n".to_string();
             }
-            let mem = memory.lock().await;
+            let mut mem = memory.lock().await;
             match mem.get(&command[1]) {
                 Some(value) => format!("+{}\r\n", value),
                 None => "$-1\r\n".to_string(),
