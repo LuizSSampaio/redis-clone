@@ -1,3 +1,4 @@
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
 #[tokio::main]
@@ -10,15 +11,15 @@ async fn main() {
     }
 }
 
-async fn process(socket: TcpStream) {
+async fn process(mut socket: TcpStream) {
     let mut buffer = [0; 1024];
 
     loop {
-        let bytes_read = socket.try_read(&mut buffer).unwrap();
+        let bytes_read = socket.read(&mut buffer).await.unwrap();
         if bytes_read == 0 {
             break;
         }
 
-        socket.try_write(b"+PONG\r\n").unwrap();
+        socket.write_all(b"+PONG\r\n").await.unwrap();
     }
 }
