@@ -10,7 +10,16 @@ fn main() {
         match stream {
             Ok(mut stream) => {
                 println!("New connection: {}", stream.peer_addr().unwrap());
-                stream.write_all(b"+PONG\r\n").unwrap();
+                let mut buffer = [0; 1024];
+
+                loop {
+                    let bytes_read = stream.read(&mut buffer).unwrap();
+                    if bytes_read == 0 {
+                        break;
+                    }
+
+                    stream.write_all(b"+PONG\r\n").unwrap();
+                }
             }
             Err(e) => {
                 println!("error: {}", e);
