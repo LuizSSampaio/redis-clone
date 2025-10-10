@@ -4,36 +4,68 @@ use tokio::time::Instant;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Memory {
-    data: HashMap<String, Value>,
+    data: HashMap<String, RedisValue>,
 }
 
 impl Memory {
     pub fn set(&mut self, key: String, value: String, duration: Option<Duration>) {
-        let value = Value {
+        let value = RedisValue::String(StringValue {
             data: value,
             duration,
-            instant: Instant::now(),
-        };
+            creation_date: Instant::now(),
+        });
 
         self.data.insert(key, value);
     }
 
     pub fn get(&mut self, key: &str) -> Option<String> {
-        self.data.get(key).cloned().and_then(|value| {
-            if let Some(duration) = value.duration
-                && value.instant.elapsed() >= duration
-            {
-                self.data.remove(key);
-                return None;
+        self.data.get(key).cloned().and_then(|value| match value {
+            RedisValue::String(value) => {
+                if let Some(duration) = value.duration
+                    && value.creation_date.elapsed() >= duration
+                {
+                    self.data.remove(key);
+                    return None;
+                }
+
+                Some(value.data)
             }
-            Some(value.data)
+            RedisValue::List(_) => None,
         })
+    }
+
+    pub fn rpush(&mut self, key: String, value: String) -> usize {
+        let entry = self.data.entry(key).or_insert_with(|| {
+            RedisValue::List(ListValue {
+                data: Vec::new(),
+                creation_date: Instant::now(),
+            })
+        });
+
+        if let RedisValue::List(list) = entry {
+            list.data.push(value);
+            list.data.len()
+        } else {
+            0
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct Value {
+enum RedisValue {
+    String(StringValue),
+    List(ListValue),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct StringValue {
     pub data: String,
     pub duration: Option<Duration>,
-    pub instant: Instant,
+    pub creation_date: Instant,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ListValue {
+    pub data: Vec<String>,
+    pub creation_date: Instant,
 }
