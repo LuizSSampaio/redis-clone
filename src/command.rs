@@ -56,6 +56,15 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
                 None => "$-1\r\n".to_string(),
             }
         }
+        "RPUSH" => {
+            if command.len() < 3 {
+                return "-ERR wrong number of arguments for 'rpush' command\r\n".to_string();
+            }
+
+            let mut mem = memory.lock().await;
+            mem.set(command[1].clone(), command[2].clone(), None);
+            ":1\r\n".to_string()
+        }
         _ => "-ERR unknown command\r\n".to_string(),
     }
 }
