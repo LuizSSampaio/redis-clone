@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 use crate::memory::Memory;
 
 mod command;
+mod data;
 mod memory;
 mod resp_parser;
 
