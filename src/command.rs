@@ -69,6 +69,37 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
 
             format!(":{}\r\n", len)
         }
+        "LRANGE" => {
+            if command.len() < 4 {
+                return "-ERR wrong number of arguments for 'lrange' command\r\n".to_string();
+            }
+
+            let start = match command[2].parse::<isize>() {
+                Ok(num) => num,
+                Err(_) => {
+                    return "-ERR value is not an integer or out of range\r\n".to_string();
+                }
+            };
+
+            let stop = match command[3].parse::<isize>() {
+                Ok(num) => num,
+                Err(_) => {
+                    return "-ERR value is not an integer or out of range\r\n".to_string();
+                }
+            };
+
+            let mem = memory.lock().await;
+            match mem.lrange(&command[1], start, stop) {
+                Some(values) => {
+                    let mut response = format!("*{}\r\n", values.len());
+                    for value in values {
+                        response.push_str(&format!("+{}\r\n", value));
+                    }
+                    response
+                }
+                None => "$-1\r\n".to_string(),
+            }
+        }
         _ => "-ERR unknown command\r\n".to_string(),
     }
 }
