@@ -97,7 +97,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
                     }
                     response
                 }
-                None => "$-1\r\n".to_string(),
+                None => "*0\r\n".to_string(),
             }
         }
         _ => "-ERR unknown command\r\n".to_string(),
