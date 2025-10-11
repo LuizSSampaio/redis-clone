@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::Arc, time::SystemTime};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::SystemTime,
+};
 
 use dashmap::DashMap;
 
@@ -31,6 +35,21 @@ impl Store {
         match &entry.record {
             RecordType::String(value) => Some(value.clone()),
             _ => None,
+        }
+    }
+
+    pub fn rpush(&self, key: String, value: String) -> usize {
+        let mut entry = self
+            .entries
+            .entry(key)
+            .or_insert_with(|| RecordData::new(RecordType::List(VecDeque::new()), None));
+
+        match &mut entry.record {
+            RecordType::List(list) => {
+                list.push_back(value);
+                list.len()
+            }
+            _ => 0,
         }
     }
 }
