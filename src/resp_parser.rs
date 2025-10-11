@@ -6,7 +6,7 @@ pub fn parse(source: &[u8]) -> Vec<String> {
         if line.starts_with('*') || line.starts_with('$') || line.is_empty() {
             return;
         }
-        if line.starts_with('+') || line.starts_with(':') || line.starts_with('-') {
+        if line.starts_with('+') || line.starts_with(':') {
             res.push(line[1..].to_string());
             return;
         }
