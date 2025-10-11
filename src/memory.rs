@@ -49,6 +49,23 @@ impl Memory {
             0
         }
     }
+
+    pub fn lrange(&self, key: &str, start: isize, stop: isize) -> Option<Vec<String>> {
+        self.data.get(key).cloned().and_then(|value| match value {
+            RedisValue::List(list) => {
+                let len = list.data.len() as isize;
+                let start = if start < 0 { len + start } else { start }.max(0) as usize;
+                let stop = if stop < 0 { len + stop } else { stop }.min(len - 1) as usize;
+
+                if start > stop || start >= len as usize {
+                    return Some(vec![]);
+                }
+
+                Some(list.data[start..=stop].to_vec())
+            }
+            _ => None,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
