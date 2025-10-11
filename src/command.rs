@@ -62,7 +62,11 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
             }
 
             let mut mem = memory.lock().await;
-            let len = mem.rpush(command[1].clone(), command[2].clone());
+            let mut len = 0;
+            for value in command.iter().skip(2) {
+                len += mem.rpush(command[1].clone(), value.clone());
+            }
+
             format!(":{}\r\n", len)
         }
         _ => "-ERR unknown command\r\n".to_string(),
