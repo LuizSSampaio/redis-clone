@@ -52,4 +52,19 @@ impl Store {
             _ => 0,
         }
     }
+
+    pub fn lpush(&self, key: String, value: String) -> usize {
+        let mut entry = self
+            .entries
+            .entry(key)
+            .or_insert_with(|| RecordData::new(RecordType::List(VecDeque::new()), None));
+
+        match &mut entry.record {
+            RecordType::List(list) => {
+                list.push_front(value);
+                list.len()
+            }
+            _ => 0,
+        }
+    }
 }
