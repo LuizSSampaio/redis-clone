@@ -67,4 +67,19 @@ impl Store {
             _ => 0,
         }
     }
+
+    pub fn lrange(&self, key: &str, start: isize, stop: isize) -> Vec<String> {
+        let Some(entry) = self.entries.get(key) else {
+            return Vec::new();
+        };
+        let RecordType::List(list) = &entry.record else {
+            return Vec::new();
+        };
+
+        let len = list.len() as isize;
+        let start = if start < 0 { len + start } else { start }.max(0) as usize;
+        let stop = if stop < 0 { len + stop } else { stop }.min(len - 1) as usize;
+
+        list.range(start..=stop).map(|s| s.to_owned()).collect()
+    }
 }
