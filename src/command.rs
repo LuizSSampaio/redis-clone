@@ -64,7 +64,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
             let mut mem = memory.lock().await;
             let mut len = 0;
             for value in command.iter().skip(2) {
-                len += mem.rpush(command[1].clone(), value.clone());
+                len = mem.rpush(command[1].clone(), value.clone());
             }
 
             format!(":{}\r\n", len)
