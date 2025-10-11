@@ -8,17 +8,13 @@ pub enum RecordType {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecordData {
-    record: RecordType,
+    pub record: RecordType,
     expiration: Option<SystemTime>,
 }
 
 impl RecordData {
     pub fn new(record: RecordType, expiration: Option<SystemTime>) -> Self {
         Self { record, expiration }
-    }
-
-    pub fn record(&self) -> &RecordType {
-        &self.record
     }
 
     pub fn is_expired(&self) -> bool {

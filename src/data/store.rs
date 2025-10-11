@@ -28,7 +28,7 @@ impl Store {
             return None;
         }
 
-        match entry.record() {
+        match &entry.record {
             RecordType::String(value) => Some(value.clone()),
             _ => None,
         }
