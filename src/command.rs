@@ -113,6 +113,14 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
                 None => "*0\r\n".to_string(),
             }
         }
+        "LLEN" => {
+            if command.len() < 2 {
+                return "-ERR wrong number of arguments for 'llen' command\r\n".to_string();
+            }
+
+            let mem = memory.lock().await;
+            format!(":{}\r\n", mem.llen(&command[1]))
+        }
         _ => "-ERR unknown command\r\n".to_string(),
     }
 }

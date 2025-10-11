@@ -82,6 +82,13 @@ impl Memory {
             _ => None,
         })
     }
+
+    pub fn llen(&self, key: &str) -> usize {
+        if let Some(RedisValue::List(list)) = self.data.get(key) {
+            return list.data.len();
+        }
+        0
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
