@@ -50,6 +50,22 @@ impl Memory {
         }
     }
 
+    pub fn lpush(&mut self, key: String, value: String) -> usize {
+        let entry = self.data.entry(key).or_insert_with(|| {
+            RedisValue::List(ListValue {
+                data: Vec::new(),
+                creation_date: Instant::now(),
+            })
+        });
+
+        if let RedisValue::List(list) = entry {
+            list.data.insert(0, value);
+            list.data.len()
+        } else {
+            0
+        }
+    }
+
     pub fn lrange(&self, key: &str, start: isize, stop: isize) -> Option<Vec<String>> {
         self.data.get(key).cloned().and_then(|value| match value {
             RedisValue::List(list) => {

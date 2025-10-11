@@ -69,6 +69,19 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
 
             format!(":{}\r\n", len)
         }
+        "LPUSH" => {
+            if command.len() < 3 {
+                return "-ERR wrong number of arguments for 'lpush' command\r\n".to_string();
+            }
+
+            let mut mem = memory.lock().await;
+            let mut len = 0;
+            for value in command.iter().skip(2) {
+                len = mem.lpush(command[1].clone(), value.clone());
+            }
+
+            format!(":{}\r\n", len)
+        }
         "LRANGE" => {
             if command.len() < 4 {
                 return "-ERR wrong number of arguments for 'lrange' command\r\n".to_string();
