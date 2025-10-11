@@ -17,6 +17,10 @@ impl RecordData {
         Self { record, expiration }
     }
 
+    pub fn record(&self) -> &RecordType {
+        &self.record
+    }
+
     pub fn is_expired(&self) -> bool {
         if let Some(expiration) = self.expiration {
             return SystemTime::now() > expiration;
