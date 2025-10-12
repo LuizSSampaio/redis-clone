@@ -85,6 +85,17 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
 
             format!(":{}\r\n", len)
         }
+        "LPOP" => {
+            if command.len() < 2 {
+                return "-ERR wrong number of arguments for 'lpop' command\r\n".to_string();
+            }
+
+            let mem = memory.lock().await;
+            match mem.lpop(&command[1]) {
+                Some(value) => format!("+{}\r\n", value),
+                None => "$-1\r\n".to_string(),
+            }
+        }
         "LRANGE" => {
             if command.len() < 4 {
                 return "-ERR wrong number of arguments for 'lrange' command\r\n".to_string();

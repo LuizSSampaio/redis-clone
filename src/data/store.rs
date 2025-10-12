@@ -58,6 +58,15 @@ impl Store {
         }
     }
 
+    pub fn lpop(&self, key: &str) -> Option<String> {
+        let mut entry = self.entries.get_mut(key)?;
+        let RecordType::List(list) = &mut entry.record else {
+            return None;
+        };
+
+        list.pop_front()
+    }
+
     pub fn lrange(&self, key: &str, start: isize, stop: isize) -> Vec<String> {
         let Some(entry) = self.entries.get(key) else {
             return Vec::new();
