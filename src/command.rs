@@ -27,6 +27,9 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
 
             let duration = match command.get(3) {
                 Some(flag) => {
+                    if command.len() < 5 {
+                        return "-ERR wrong number of arguments for 'set' command\r\n".to_string();
+                    }
                     let time = match command[4].parse::<u64>() {
                         Ok(time) => time,
                         Err(_) => {

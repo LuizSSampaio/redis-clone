@@ -16,15 +16,19 @@ impl Store {
     }
 
     pub fn get(&self, key: &str) -> Option<String> {
-        let entry = self.entries.get(key)?;
-        if entry.is_expired() {
-            self.entries.remove(key);
-            return None;
-        }
+        if let Some(entry) = self.entries.get(key) {
+            if entry.is_expired() {
+                drop(entry);
+                self.entries.remove(key);
+                return None;
+            }
 
-        match &entry.record {
-            RecordType::String(value) => Some(value.clone()),
-            _ => None,
+            match &entry.record {
+                RecordType::String(value) => Some(value.clone()),
+                _ => None,
+            }
+        } else {
+            None
         }
     }
 
