@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::Arc,
-    time::SystemTime,
-};
+use std::{collections::VecDeque, sync::Arc, time::SystemTime};
 
 use dashmap::DashMap;
 
@@ -14,12 +10,6 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(entries: HashMap<String, RecordData>) -> Self {
-        Self {
-            entries: Arc::new(DashMap::from_iter(entries)),
-        }
-    }
-
     pub fn set(&self, key: String, value: String, duration: Option<SystemTime>) {
         self.entries
             .insert(key, RecordData::new(RecordType::String(value), duration));
