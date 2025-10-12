@@ -1,10 +1,13 @@
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 use tokio::sync::Mutex;
 
-use crate::memory::Memory;
+use crate::data::Store;
 
-pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String {
+pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String {
     if command.is_empty() {
         return "-ERR unknown command\r\n".to_string();
     }
@@ -32,8 +35,8 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
                     };
 
                     match flag.to_uppercase().as_str() {
-                        "EX" => Some(std::time::Duration::from_secs(time)),
-                        "PX" => Some(std::time::Duration::from_millis(time)),
+                        "EX" => Some(SystemTime::now() + Duration::from_secs(time)),
+                        "PX" => Some(SystemTime::now() + Duration::from_millis(time)),
                         _ => {
                             return "-ERR syntax error\r\n".to_string();
                         }
@@ -102,16 +105,13 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Memory>>) -> String
             };
 
             let mem = memory.lock().await;
-            match mem.lrange(&command[1], start, stop) {
-                Some(values) => {
-                    let mut response = format!("*{}\r\n", values.len());
-                    for value in values {
-                        response.push_str(&format!("+{}\r\n", value));
-                    }
-                    response
-                }
-                None => "*0\r\n".to_string(),
+            let values = mem.lrange(&command[1], start, stop);
+
+            let mut response = format!("*{}\r\n", values.len());
+            for value in values {
+                response.push_str(&format!("+{}\r\n", value));
             }
+            response
         }
         "LLEN" => {
             if command.len() < 2 {

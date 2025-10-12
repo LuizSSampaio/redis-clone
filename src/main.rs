@@ -4,17 +4,16 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 
-use crate::memory::Memory;
+use crate::data::Store;
 
 mod command;
 mod data;
-mod memory;
 mod resp_parser;
 
 #[tokio::main]
 async fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
-    let memory = Arc::new(Mutex::new(Memory::default()));
+    let memory = Arc::new(Mutex::new(Store::default()));
 
     loop {
         let (socket, _) = listener.accept().await.unwrap();
@@ -25,7 +24,7 @@ async fn main() {
     }
 }
 
-async fn process(mut socket: TcpStream, memory: Arc<Mutex<Memory>>) {
+async fn process(mut socket: TcpStream, memory: Arc<Mutex<Store>>) {
     let mut buffer = [0; 1024];
 
     loop {
