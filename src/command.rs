@@ -45,7 +45,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 None => None,
             };
 
-            let mut mem = memory.lock().await;
+            let mem = memory.lock().await;
             mem.set(command[1].clone(), command[2].clone(), duration);
             "+OK\r\n".to_string()
         }
@@ -53,7 +53,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
             if command.len() < 2 {
                 return "-ERR wrong number of arguments for 'get' command\r\n".to_string();
             }
-            let mut mem = memory.lock().await;
+            let mem = memory.lock().await;
             match mem.get(&command[1]) {
                 Some(value) => format!("+{}\r\n", value),
                 None => "$-1\r\n".to_string(),
@@ -64,7 +64,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'rpush' command\r\n".to_string();
             }
 
-            let mut mem = memory.lock().await;
+            let mem = memory.lock().await;
             let mut len = 0;
             for value in command.iter().skip(2) {
                 len = mem.rpush(command[1].clone(), value.clone());
@@ -77,7 +77,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'lpush' command\r\n".to_string();
             }
 
-            let mut mem = memory.lock().await;
+            let mem = memory.lock().await;
             let mut len = 0;
             for value in command.iter().skip(2) {
                 len = mem.lpush(command[1].clone(), value.clone());
