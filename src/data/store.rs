@@ -82,4 +82,15 @@ impl Store {
 
         list.range(start..=stop).map(|s| s.to_owned()).collect()
     }
+
+    pub fn llen(&self, key: &str) -> usize {
+        let Some(entry) = self.entries.get(key) else {
+            return 0;
+        };
+        let RecordType::List(list) = &entry.record else {
+            return 0;
+        };
+
+        list.len()
+    }
 }
