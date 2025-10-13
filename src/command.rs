@@ -93,7 +93,29 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'lpop' command\r\n".to_string();
             }
 
+            let num_to_pop = if command.len() >= 3 {
+                match command[2].parse::<usize>() {
+                    Ok(num) => num,
+                    Err(_) => {
+                        return "-ERR value is not an integer or out of range\r\n".to_string();
+                    }
+                }
+            } else {
+                1
+            };
+
             let mem = memory.lock().await;
+            if num_to_pop > 1 {
+                let mut response = format!("*{}\r\n", num_to_pop);
+                for _ in 0..num_to_pop {
+                    match mem.lpop(&command[1]) {
+                        Some(value) => response.push_str(&format!("+{}\r\n", value)),
+                        None => break,
+                    }
+                }
+                return response;
+            }
+
             match mem.lpop(&command[1]) {
                 Some(value) => format!("+{}\r\n", value),
                 None => "$-1\r\n".to_string(),
