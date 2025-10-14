@@ -136,17 +136,17 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                 );
             }
 
-            let timeout_secs = match command[2].parse::<u64>() {
+            let timeout_secs = match command[2].parse::<f64>() {
                 Ok(num) => num,
                 Err(_) => {
                     return RespValue::Error("timeout is not a float or out of range".to_string());
                 }
             };
 
-            let timeout = if timeout_secs == 0 {
+            let timeout = if timeout_secs == 0.0 {
                 None
             } else {
-                Some(SystemTime::now() + Duration::from_secs(timeout_secs))
+                Some(SystemTime::now() + Duration::from_secs_f64(timeout_secs))
             };
 
             match memory.blpop(&command[1], timeout).await {
