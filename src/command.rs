@@ -140,7 +140,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
             let mem = memory.lock().await;
             match mem.blpop(&command[1], timeout).await {
                 Some((key, value)) => format!("*2\r\n+{}\r\n+{}\r\n", key, value),
-                None => "$-1\r\n".to_string(),
+                None => "*-1\r\n".to_string(),
             }
         }
         "LRANGE" => {
