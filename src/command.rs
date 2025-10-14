@@ -3,11 +3,9 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use tokio::sync::Mutex;
-
 use crate::data::Store;
 
-pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String {
+pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> String {
     if command.is_empty() {
         return "-ERR unknown command\r\n".to_string();
     }
@@ -48,16 +46,14 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 None => None,
             };
 
-            let mem = memory.lock().await;
-            mem.set(command[1].clone(), command[2].clone(), duration);
+            memory.set(command[1].clone(), command[2].clone(), duration);
             "+OK\r\n".to_string()
         }
         "GET" => {
             if command.len() < 2 {
                 return "-ERR wrong number of arguments for 'get' command\r\n".to_string();
             }
-            let mem = memory.lock().await;
-            match mem.get(&command[1]) {
+            match memory.get(&command[1]) {
                 Some(value) => format!("+{}\r\n", value),
                 None => "$-1\r\n".to_string(),
             }
@@ -67,10 +63,9 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'rpush' command\r\n".to_string();
             }
 
-            let mem = memory.lock().await;
             let mut len = 0;
             for value in command.iter().skip(2) {
-                len = mem.rpush(command[1].clone(), value.clone()).await;
+                len = memory.rpush(command[1].clone(), value.clone()).await;
             }
 
             format!(":{}\r\n", len)
@@ -80,10 +75,9 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'lpush' command\r\n".to_string();
             }
 
-            let mem = memory.lock().await;
             let mut len = 0;
             for value in command.iter().skip(2) {
-                len = mem.lpush(command[1].clone(), value.clone()).await;
+                len = memory.lpush(command[1].clone(), value.clone()).await;
             }
 
             format!(":{}\r\n", len)
@@ -104,11 +98,10 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 1
             };
 
-            let mem = memory.lock().await;
             if num_to_pop > 1 {
                 let mut response = format!("*{}\r\n", num_to_pop);
                 for _ in 0..num_to_pop {
-                    match mem.lpop(&command[1]) {
+                    match memory.lpop(&command[1]) {
                         Some(value) => response.push_str(&format!("+{}\r\n", value)),
                         None => break,
                     }
@@ -116,7 +109,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return response;
             }
 
-            match mem.lpop(&command[1]) {
+            match memory.lpop(&command[1]) {
                 Some(value) => format!("+{}\r\n", value),
                 None => "$-1\r\n".to_string(),
             }
@@ -139,8 +132,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 Some(SystemTime::now() + Duration::from_secs(timeout_secs))
             };
 
-            let mem = memory.lock().await;
-            match mem.blpop(&command[1], timeout).await {
+            match memory.blpop(&command[1], timeout).await {
                 Some((key, value)) => format!("*2\r\n+{}\r\n+{}\r\n", key, value),
                 None => "*-1\r\n".to_string(),
             }
@@ -164,8 +156,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 }
             };
 
-            let mem = memory.lock().await;
-            let values = mem.lrange(&command[1], start, stop);
+            let values = memory.lrange(&command[1], start, stop);
 
             let mut response = format!("*{}\r\n", values.len());
             for value in values {
@@ -178,8 +169,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 return "-ERR wrong number of arguments for 'llen' command\r\n".to_string();
             }
 
-            let mem = memory.lock().await;
-            format!(":{}\r\n", mem.llen(&command[1]))
+            format!(":{}\r\n", memory.llen(&command[1]))
         }
         _ => "-ERR unknown command\r\n".to_string(),
     }

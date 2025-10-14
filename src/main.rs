@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::Mutex;
+
 
 use crate::data::Store;
 
@@ -13,7 +13,7 @@ mod resp_parser;
 #[tokio::main]
 async fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
-    let memory = Arc::new(Mutex::new(Store::default()));
+    let memory = Arc::new(Store::default());
 
     loop {
         let (socket, _) = listener.accept().await.unwrap();
@@ -24,7 +24,7 @@ async fn main() {
     }
 }
 
-async fn process(mut socket: TcpStream, memory: Arc<Mutex<Store>>) {
+async fn process(mut socket: TcpStream, memory: Arc<Store>) {
     let mut buffer = [0; 1024];
 
     loop {
