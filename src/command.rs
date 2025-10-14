@@ -121,6 +121,28 @@ pub async fn handler(command: Vec<String>, memory: Arc<Mutex<Store>>) -> String 
                 None => "$-1\r\n".to_string(),
             }
         }
+        "BLPOP" => {
+            if command.len() < 2 {
+                return "-ERR wrong number of arguments for 'blpop' command\r\n".to_string();
+            }
+
+            let timeout = if command.len() >= 3 {
+                match command[2].parse::<u64>() {
+                    Ok(num) => Some(SystemTime::now() + Duration::from_secs(num)),
+                    Err(_) => {
+                        return "-ERR value is not an integer or out of range\r\n".to_string();
+                    }
+                }
+            } else {
+                None
+            };
+
+            let mem = memory.lock().await;
+            match mem.blpop(&command[1], timeout).await {
+                Some((key, value)) => format!("*2\r\n+{}\r\n+{}\r\n", key, value),
+                None => "$-1\r\n".to_string(),
+            }
+        }
         "LRANGE" => {
             if command.len() < 4 {
                 return "-ERR wrong number of arguments for 'lrange' command\r\n".to_string();

@@ -96,6 +96,33 @@ impl Store {
         list.pop_front()
     }
 
+    pub async fn blpop(&self, key: &str, deadline: Option<SystemTime>) -> Option<(String, String)> {
+        loop {
+            if let Some(value) = self.lpop(key) {
+                return Some((key.to_string(), value));
+            }
+
+            let receiver = {
+                let mut waiters = self.waiters.write().await;
+                let queue = waiters.entry(key.to_string()).or_default();
+                let (sender, receiver) = oneshot::channel();
+                queue.push_back(sender);
+                receiver
+            };
+
+            if let Some(dl) = deadline {
+                if SystemTime::now() >= dl {
+                    return None;
+                }
+
+                let remaining = dl.duration_since(SystemTime::now()).ok()?;
+                if tokio::time::timeout(remaining, receiver).await.is_err() {
+                    return None;
+                }
+            }
+        }
+    }
+
     pub fn lrange(&self, key: &str, start: isize, stop: isize) -> Vec<String> {
         let Some(entry) = self.entries.get(key) else {
             return Vec::new();
