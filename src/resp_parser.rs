@@ -5,6 +5,7 @@ pub enum RespValue {
     BulkString(Option<String>),
     Array(Vec<RespValue>),
     Null,
+    NullArray,
 }
 
 impl From<RespValue> for String {
@@ -15,6 +16,7 @@ impl From<RespValue> for String {
             RespValue::Integer(n) => format!(":{}\r\n", n),
             RespValue::BulkString(Some(s)) => format!("${}\r\n{}\r\n", s.len(), s),
             RespValue::BulkString(None) | RespValue::Null => "$-1\r\n".to_string(),
+            RespValue::NullArray => "*-1\r\n".to_string(),
             RespValue::Array(items) => {
                 let mut result = format!("*{}\r\n", items.len());
                 for item in items {

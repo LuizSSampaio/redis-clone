@@ -154,7 +154,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                     RespValue::BulkString(Some(key)),
                     RespValue::BulkString(Some(value)),
                 ]),
-                None => RespValue::Null,
+                None => RespValue::NullArray,
             }
         }
         "LRANGE" => {
