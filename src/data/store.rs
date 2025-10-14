@@ -1,15 +1,34 @@
-use std::{collections::VecDeque, sync::Arc, time::SystemTime};
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+    time::SystemTime,
+};
 
 use dashmap::DashMap;
+use tokio::sync::{RwLock, oneshot};
 
 use crate::data::record::{RecordData, RecordType};
 
 #[derive(Debug, Default, Clone)]
 pub struct Store {
     entries: Arc<DashMap<String, RecordData>>,
+    waiters: Arc<RwLock<HashMap<String, VecDeque<oneshot::Sender<()>>>>>,
 }
 
 impl Store {
+    async fn notify_waiters(&self, key: &str) {
+        let mut waiters = self.waiters.write().await;
+        let Some(queue) = waiters.get_mut(key) else {
+            return;
+        };
+
+        while let Some(waiter) = queue.pop_front() {
+            if waiter.send(()).is_ok() {
+                return;
+            }
+        }
+    }
+
     pub fn set(&self, key: String, value: String, duration: Option<SystemTime>) {
         self.entries
             .insert(key, RecordData::new(RecordType::String(value), duration));
@@ -32,30 +51,36 @@ impl Store {
         }
     }
 
-    pub fn rpush(&self, key: String, value: String) -> usize {
+    pub async fn rpush(&self, key: String, value: String) -> usize {
         let mut entry = self
             .entries
-            .entry(key)
+            .entry(key.clone())
             .or_insert_with(|| RecordData::new(RecordType::List(VecDeque::new()), None));
 
         match &mut entry.record {
             RecordType::List(list) => {
                 list.push_back(value);
+
+                self.notify_waiters(&key).await;
+
                 list.len()
             }
             _ => 0,
         }
     }
 
-    pub fn lpush(&self, key: String, value: String) -> usize {
+    pub async fn lpush(&self, key: String, value: String) -> usize {
         let mut entry = self
             .entries
-            .entry(key)
+            .entry(key.clone())
             .or_insert_with(|| RecordData::new(RecordType::List(VecDeque::new()), None));
 
         match &mut entry.record {
             RecordType::List(list) => {
                 list.push_front(value);
+
+                self.notify_waiters(&key).await;
+
                 list.len()
             }
             _ => 0,
