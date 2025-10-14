@@ -119,6 +119,8 @@ impl Store {
                 if tokio::time::timeout(remaining, receiver).await.is_err() {
                     return None;
                 }
+            } else {
+                receiver.await.ok()?;
             }
         }
     }
