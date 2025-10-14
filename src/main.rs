@@ -35,6 +35,7 @@ async fn process(mut socket: TcpStream, memory: Arc<Store>) {
 
         let content = resp_parser::parse(&buffer[..bytes_read]);
         let response = command::handler(content, memory.clone()).await;
-        socket.write_all(response.as_bytes()).await.unwrap();
+        let response_str: String = response.into();
+        socket.write_all(response_str.as_bytes()).await.unwrap();
     }
 }
