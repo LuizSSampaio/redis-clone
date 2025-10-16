@@ -23,4 +23,11 @@ impl RecordData {
         }
         false
     }
+
+    pub fn type_name(&self) -> &'static str {
+        match self.record {
+            RecordType::String(_) => "string",
+            RecordType::List(_) => "list",
+        }
+    }
 }

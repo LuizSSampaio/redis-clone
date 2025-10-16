@@ -196,6 +196,15 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
 
             RespValue::Integer(memory.llen(&command[1]) as i64)
         }
+        "TYPE" => {
+            if command.len() < 2 {
+                return RespValue::Error(
+                    "wrong number of arguments for 'type' command".to_string(),
+                );
+            }
+
+            RespValue::SimpleString(memory.type_of(&command[1]).into())
+        }
         _ => RespValue::Error("unknown command".to_string()),
     }
 }

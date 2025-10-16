@@ -150,4 +150,12 @@ impl Store {
 
         list.len()
     }
+
+    pub fn type_of(&self, key: &str) -> &'static str {
+        let Some(entry) = self.entries.get(key) else {
+            return "none";
+        };
+
+        entry.type_name()
+    }
 }
