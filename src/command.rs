@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     sync::Arc,
     time::{Duration, SystemTime},
 };
@@ -204,6 +205,28 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
             }
 
             RespValue::SimpleString(memory.type_of(&command[1]).into())
+        }
+        "XADD" => {
+            if command.len() < 4 {
+                return RespValue::Error(
+                    "wrong number of arguments for 'xadd' command".to_string(),
+                );
+            }
+
+            let id = command[2].clone();
+            let mut map = HashMap::new();
+
+            let mut iter = command.iter().skip(3);
+            while let Some(key) = iter.next() {
+                if let Some(value) = iter.next() {
+                    map.insert(key.clone(), value.clone());
+                } else {
+                    return RespValue::Error("syntax error".to_string());
+                }
+            }
+
+            memory.xadd(command[1].clone(), id.clone(), map);
+            RespValue::BulkString(Some(id))
         }
         _ => RespValue::Error("unknown command".to_string()),
     }

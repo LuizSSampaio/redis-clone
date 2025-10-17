@@ -7,7 +7,10 @@ use std::{
 use dashmap::DashMap;
 use tokio::sync::{RwLock, oneshot};
 
-use crate::data::record::{RecordData, RecordType};
+use crate::data::{
+    record::{RecordData, RecordType},
+    stream::StreamRecord,
+};
 
 #[derive(Debug, Default, Clone)]
 pub struct Store {
@@ -157,5 +160,15 @@ impl Store {
         };
 
         entry.type_name()
+    }
+
+    pub fn xadd(&self, key: String, field: String, value: HashMap<String, String>) {
+        let mut entry = self.entries.entry(key.clone()).or_insert_with(|| {
+            RecordData::new(RecordType::Stream(StreamRecord::new(key.clone())), None)
+        });
+
+        if let RecordType::Stream(stream_record) = &mut entry.record {
+            stream_record.xadd(field, value);
+        }
     }
 }
