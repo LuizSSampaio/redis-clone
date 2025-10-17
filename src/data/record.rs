@@ -1,9 +1,12 @@
 use std::{collections::VecDeque, time::SystemTime};
 
+use crate::data::stream::StreamRecord;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RecordType {
     String(String),
     List(VecDeque<String>),
+    Stream(StreamRecord),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -28,6 +31,7 @@ impl RecordData {
         match self.record {
             RecordType::String(_) => "string",
             RecordType::List(_) => "list",
+            RecordType::Stream(_) => "stream",
         }
     }
 }
