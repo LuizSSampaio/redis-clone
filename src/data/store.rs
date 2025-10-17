@@ -162,13 +162,19 @@ impl Store {
         entry.type_name()
     }
 
-    pub fn xadd(&self, key: String, field: String, value: HashMap<String, String>) {
+    pub fn xadd(
+        &self,
+        key: String,
+        field: String,
+        value: HashMap<String, String>,
+    ) -> anyhow::Result<()> {
         let mut entry = self.entries.entry(key.clone()).or_insert_with(|| {
             RecordData::new(RecordType::Stream(StreamRecord::new(key.clone())), None)
         });
 
         if let RecordType::Stream(stream_record) = &mut entry.record {
-            stream_record.xadd(field, value);
+            stream_record.xadd(field, value)?;
         }
+        Ok(())
     }
 }

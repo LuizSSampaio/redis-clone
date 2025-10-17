@@ -6,6 +6,7 @@ use thiserror::Error;
 pub struct StreamRecord {
     id: String,
     value: StramValue,
+    last_id: StreamEntryID,
 }
 
 impl StreamRecord {
@@ -13,12 +14,37 @@ impl StreamRecord {
         Self {
             id,
             value: StramValue(BTreeMap::new()),
+            last_id: StreamEntryID::default(),
         }
     }
 
-    pub fn xadd(&mut self, field: String, value: HashMap<String, String>) {
+    pub fn xadd(
+        &mut self,
+        field: String,
+        value: HashMap<String, String>,
+    ) -> Result<(), StreamRecordError> {
+        let entry_id = StreamEntryID::new(&field)?;
+        if entry_id.ms == 0 && entry_id.seq == 0 {
+            return Err(StreamRecordError::MustBeGreater00);
+        }
+        if entry_id <= self.last_id {
+            return Err(StreamRecordError::EqualOrSmallerThanLastID);
+        }
+
         self.value.0.insert(field, value);
+        self.last_id = entry_id;
+        Ok(())
     }
+}
+
+#[derive(Debug, Error)]
+pub enum StreamRecordError {
+    #[error("Stream entry ID error: {0}")]
+    StreamEntryIDError(#[from] StreamEntryIDError),
+    #[error("The ID specified in XADD must be greater than 0-0")]
+    MustBeGreater00,
+    #[error("The ID specified in XADD is equal or smaller than the target stream top item")]
+    EqualOrSmallerThanLastID,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +58,19 @@ pub struct StreamEntryID {
 
 impl StreamEntryID {
     pub fn new(source: &str) -> Result<Self, StreamEntryIDError> {
-        todo!()
+        let parts: Vec<&str> = source.split('-').collect();
+        if parts.len() != 2 {
+            return Err(StreamEntryIDError::InvalidFormat);
+        }
+
+        let ms = parts[0]
+            .parse::<u128>()
+            .map_err(|_| StreamEntryIDError::InvalidFormat)?;
+        let seq = parts[1]
+            .parse::<u64>()
+            .map_err(|_| StreamEntryIDError::InvalidFormat)?;
+
+        Ok(Self { ms, seq })
     }
 }
 
@@ -40,8 +78,4 @@ impl StreamEntryID {
 pub enum StreamEntryIDError {
     #[error("Invalid stream ID format")]
     InvalidFormat,
-    #[error("The ID specified in XADD must be greater than 0-0")]
-    MustBeGreater00,
-    #[error("The ID specified in XADD is equal or smaller than the target stream top item")]
-    EqualOrSmallerThanLastID,
 }

@@ -225,8 +225,10 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                 }
             }
 
-            memory.xadd(command[1].clone(), id.clone(), map);
-            RespValue::BulkString(Some(id))
+            match memory.xadd(command[1].clone(), id.clone(), map) {
+                Ok(_) => RespValue::BulkString(Some(id)),
+                Err(err) => RespValue::Error(err.to_string()),
+            }
         }
         _ => RespValue::Error("unknown command".to_string()),
     }
