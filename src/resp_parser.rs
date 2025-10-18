@@ -33,7 +33,7 @@ pub fn parse(source: &[u8]) -> Vec<String> {
     let mut res = Vec::new();
 
     source.split("\r\n").for_each(|line| {
-        if line == "*" {
+        if line == "*" || line == "-" {
             res.push(line.to_string());
             return;
         }
