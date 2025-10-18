@@ -37,7 +37,18 @@ impl StreamRecord {
         } else {
             start.try_into()?
         };
-        let end = end.try_into()?;
+        let end = if end == "+" {
+            self.value
+                .0
+                .last_key_value()
+                .map(|(k, _)| StreamEntryID::parse_id(k, &self.last_id))
+                .unwrap_or(Ok(StreamEntryID {
+                    ms: u128::MAX,
+                    seq: u64::MAX,
+                }))?
+        } else {
+            end.try_into()?
+        };
 
         let mut result = BTreeMap::new();
         for (key, value) in &self.value.0 {
