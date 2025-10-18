@@ -9,7 +9,7 @@ use tokio::sync::{RwLock, oneshot};
 
 use crate::data::{
     record::{RecordData, RecordType},
-    stream::{StreamEntryID, StreamRecord},
+    stream::{StramValue, StreamEntryID, StreamRecord},
 };
 
 #[derive(Debug, Default, Clone)]
@@ -176,5 +176,18 @@ impl Store {
             anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
         };
         Ok(stream_record.xadd(field, value)?)
+    }
+
+    pub fn xrange(&self, key: &str, start: String, end: String) -> anyhow::Result<StramValue> {
+        let entry = self
+            .entries
+            .get(key)
+            .ok_or_else(|| anyhow::anyhow!("no such key"))?;
+
+        let RecordType::Stream(stream_record) = &entry.record else {
+            anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
+        };
+
+        Ok(stream_record.xrange(start, end)?)
     }
 }

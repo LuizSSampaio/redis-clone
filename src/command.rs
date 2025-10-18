@@ -230,6 +230,35 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                 Err(err) => RespValue::Error(err.to_string()),
             }
         }
+        "XRANGE" => {
+            if command.len() < 4 {
+                return RespValue::Error(
+                    "wrong number of arguments for 'xrange' command".to_string(),
+                );
+            }
+
+            let start = command[2].clone();
+            let end = command[3].clone();
+
+            match memory.xrange(&command[1], start, end) {
+                Ok(stream_value) => {
+                    let mut result = Vec::new();
+                    for (id, fields) in stream_value.0 {
+                        let mut entry = Vec::new();
+                        entry.push(RespValue::BulkString(Some(id)));
+                        let mut field_values = Vec::new();
+                        for (field, value) in fields {
+                            field_values.push(RespValue::BulkString(Some(field)));
+                            field_values.push(RespValue::BulkString(Some(value)));
+                        }
+                        entry.push(RespValue::Array(field_values));
+                        result.push(RespValue::Array(entry));
+                    }
+                    RespValue::Array(result)
+                }
+                Err(err) => RespValue::Error(err.to_string()),
+            }
+        }
         _ => RespValue::Error("unknown command".to_string()),
     }
 }

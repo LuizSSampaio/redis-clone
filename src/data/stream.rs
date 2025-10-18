@@ -35,6 +35,20 @@ impl StreamRecord {
         self.last_id = entry_id.clone();
         Ok(entry_id)
     }
+
+    pub fn xrange(&self, start: String, end: String) -> Result<StramValue, StreamRecordError> {
+        let start = start.try_into()?;
+        let end = end.try_into()?;
+
+        let mut result = BTreeMap::new();
+        for (key, value) in &self.value.0 {
+            let entry_id = StreamEntryID::parse_id(key, &self.last_id)?;
+            if entry_id >= start && entry_id <= end {
+                result.insert(key.clone(), value.clone());
+            }
+        }
+        Ok(StramValue(result))
+    }
 }
 
 #[derive(Debug, Error)]
@@ -48,7 +62,7 @@ pub enum StreamRecordError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct StramValue(BTreeMap<String, HashMap<String, String>>);
+pub struct StramValue(pub BTreeMap<String, HashMap<String, String>>);
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StreamEntryID {
@@ -96,6 +110,26 @@ impl StreamEntryID {
 
     fn gen_seq(ms: u128, last_ms: u128, last_seq: u64) -> u64 {
         if ms == last_ms { last_seq + 1 } else { 0 }
+    }
+}
+
+impl TryFrom<String> for StreamEntryID {
+    type Error = StreamEntryIDError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let parts: Vec<&str> = value.split('-').collect();
+        if parts.len() != 2 {
+            return Err(StreamEntryIDError::InvalidFormat);
+        }
+
+        let ms = parts[0]
+            .parse::<u128>()
+            .map_err(|_| StreamEntryIDError::InvalidFormat)?;
+        let seq = parts[1]
+            .parse::<u64>()
+            .map_err(|_| StreamEntryIDError::InvalidFormat)?;
+
+        Ok(Self { ms, seq })
     }
 }
 
