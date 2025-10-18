@@ -23,7 +23,7 @@ impl StreamRecord {
         field: String,
         value: HashMap<String, String>,
     ) -> Result<(), StreamRecordError> {
-        let entry_id = StreamEntryID::new(&field)?;
+        let entry_id = StreamEntryID::new(&field, &self.last_id)?;
         if entry_id.ms == 0 && entry_id.seq == 0 {
             return Err(StreamRecordError::MustBeGreater00);
         }
@@ -57,7 +57,7 @@ pub struct StreamEntryID {
 }
 
 impl StreamEntryID {
-    pub fn new(source: &str) -> Result<Self, StreamEntryIDError> {
+    pub fn new(source: &str, last_id: &StreamEntryID) -> Result<Self, StreamEntryIDError> {
         let parts: Vec<&str> = source.split('-').collect();
         if parts.len() != 2 {
             return Err(StreamEntryIDError::InvalidFormat);
@@ -66,11 +66,19 @@ impl StreamEntryID {
         let ms = parts[0]
             .parse::<u128>()
             .map_err(|_| StreamEntryIDError::InvalidFormat)?;
-        let seq = parts[1]
-            .parse::<u64>()
-            .map_err(|_| StreamEntryIDError::InvalidFormat)?;
+        let seq = if parts[1] == "*" {
+            StreamEntryID::gen_seq(ms, last_id.ms, last_id.seq)
+        } else {
+            parts[1]
+                .parse::<u64>()
+                .map_err(|_| StreamEntryIDError::InvalidFormat)?
+        };
 
         Ok(Self { ms, seq })
+    }
+
+    fn gen_seq(ms: u128, last_ms: u128, last_seq: u64) -> u64 {
+        if ms == last_ms { last_seq + 1 } else { 0 }
     }
 }
 
