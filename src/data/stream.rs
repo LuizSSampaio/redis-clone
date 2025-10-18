@@ -28,7 +28,15 @@ impl StreamRecord {
     }
 
     pub fn xrange(&self, start: String, end: String) -> Result<StramValue, StreamRecordError> {
-        let start = start.try_into()?;
+        let start = if start == "-" {
+            self.value
+                .0
+                .first_key_value()
+                .map(|(k, _)| StreamEntryID::parse_id(k, &self.last_id))
+                .unwrap_or(Ok(StreamEntryID { ms: 0, seq: 0 }))?
+        } else {
+            start.try_into()?
+        };
         let end = end.try_into()?;
 
         let mut result = BTreeMap::new();
