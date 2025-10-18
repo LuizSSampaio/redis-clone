@@ -58,6 +58,14 @@ pub struct StreamEntryID {
 
 impl StreamEntryID {
     pub fn new(source: &str, last_id: &StreamEntryID) -> Result<Self, StreamEntryIDError> {
+        if source == "*" {
+            return Ok(Self::gen_id(last_id));
+        }
+
+        Self::parse_id(source, last_id)
+    }
+
+    fn parse_id(source: &str, last_id: &StreamEntryID) -> Result<Self, StreamEntryIDError> {
         let parts: Vec<&str> = source.split('-').collect();
         if parts.len() != 2 {
             return Err(StreamEntryIDError::InvalidFormat);
@@ -67,7 +75,7 @@ impl StreamEntryID {
             .parse::<u128>()
             .map_err(|_| StreamEntryIDError::InvalidFormat)?;
         let seq = if parts[1] == "*" {
-            StreamEntryID::gen_seq(ms, last_id.ms, last_id.seq)
+            Self::gen_seq(ms, last_id.ms, last_id.seq)
         } else {
             parts[1]
                 .parse::<u64>()
@@ -75,6 +83,15 @@ impl StreamEntryID {
         };
 
         Ok(Self { ms, seq })
+    }
+
+    fn gen_id(last_id: &StreamEntryID) -> Self {
+        let ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+        let seq = Self::gen_seq(ms, last_id.ms, last_id.seq);
+        Self { ms, seq }
     }
 
     fn gen_seq(ms: u128, last_ms: u128, last_seq: u64) -> u64 {
