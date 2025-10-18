@@ -9,7 +9,7 @@ use tokio::sync::{RwLock, oneshot};
 
 use crate::data::{
     record::{RecordData, RecordType},
-    stream::StreamRecord,
+    stream::{StreamEntryID, StreamRecord},
 };
 
 #[derive(Debug, Default, Clone)]
@@ -167,14 +167,14 @@ impl Store {
         key: String,
         field: String,
         value: HashMap<String, String>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<StreamEntryID> {
         let mut entry = self.entries.entry(key.clone()).or_insert_with(|| {
             RecordData::new(RecordType::Stream(StreamRecord::new(key.clone())), None)
         });
 
-        if let RecordType::Stream(stream_record) = &mut entry.record {
-            stream_record.xadd(field, value)?;
-        }
-        Ok(())
+        let RecordType::Stream(stream_record) = &mut entry.record else {
+            anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
+        };
+        Ok(stream_record.xadd(field, value)?)
     }
 }

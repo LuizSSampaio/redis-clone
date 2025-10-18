@@ -22,7 +22,7 @@ impl StreamRecord {
         &mut self,
         field: String,
         value: HashMap<String, String>,
-    ) -> Result<(), StreamRecordError> {
+    ) -> Result<StreamEntryID, StreamRecordError> {
         let entry_id = StreamEntryID::new(&field, &self.last_id)?;
         if entry_id.ms == 0 && entry_id.seq == 0 {
             return Err(StreamRecordError::MustBeGreater00);
@@ -32,8 +32,8 @@ impl StreamRecord {
         }
 
         self.value.0.insert(field, value);
-        self.last_id = entry_id;
-        Ok(())
+        self.last_id = entry_id.clone();
+        Ok(entry_id)
     }
 }
 
@@ -79,6 +79,12 @@ impl StreamEntryID {
 
     fn gen_seq(ms: u128, last_ms: u128, last_seq: u64) -> u64 {
         if ms == last_ms { last_seq + 1 } else { 0 }
+    }
+}
+
+impl From<StreamEntryID> for String {
+    fn from(value: StreamEntryID) -> Self {
+        format!("{}-{}", value.ms, value.seq)
     }
 }
 

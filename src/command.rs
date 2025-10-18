@@ -226,7 +226,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
             }
 
             match memory.xadd(command[1].clone(), id.clone(), map) {
-                Ok(_) => RespValue::BulkString(Some(id)),
+                Ok(id) => RespValue::BulkString(Some(id.into())),
                 Err(err) => RespValue::Error(err.to_string()),
             }
         }
