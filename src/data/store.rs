@@ -168,9 +168,10 @@ impl Store {
         field: String,
         value: HashMap<String, String>,
     ) -> anyhow::Result<StreamEntryID> {
-        let mut entry = self.entries.entry(key.clone()).or_insert_with(|| {
-            RecordData::new(RecordType::Stream(StreamRecord::new(key.clone())), None)
-        });
+        let mut entry = self
+            .entries
+            .entry(key)
+            .or_insert_with(|| RecordData::new(RecordType::Stream(StreamRecord::default()), None));
 
         let RecordType::Stream(stream_record) = &mut entry.record else {
             anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");

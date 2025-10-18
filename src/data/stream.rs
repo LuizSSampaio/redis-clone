@@ -2,22 +2,13 @@ use std::collections::{BTreeMap, HashMap};
 
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct StreamRecord {
-    id: String,
     value: StramValue,
     last_id: StreamEntryID,
 }
 
 impl StreamRecord {
-    pub fn new(id: String) -> Self {
-        Self {
-            id,
-            value: StramValue(BTreeMap::new()),
-            last_id: StreamEntryID::default(),
-        }
-    }
-
     pub fn xadd(
         &mut self,
         field: String,
@@ -61,7 +52,7 @@ pub enum StreamRecordError {
     EqualOrSmallerThanLastID,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct StramValue(pub BTreeMap<String, HashMap<String, String>>);
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
