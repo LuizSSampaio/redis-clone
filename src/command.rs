@@ -260,35 +260,52 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
             }
         }
         "XREAD" => {
-            if command.len() < 4 || command.len() % 2 != 0 {
+            if command.len() < 4 {
                 return RespValue::Error(
                     "wrong number of arguments for 'xread' command".to_string(),
                 );
             }
 
-            let mut key_id = Vec::new();
-            for index in (4..command.len()).step_by(2) {
-                key_id.push((command[index].clone(), command[index + 1].clone()));
+            let streams_idx = command.iter().position(|s| s.to_uppercase() == "STREAMS");
+            if streams_idx.is_none() {
+                return RespValue::Error("syntax error".to_string());
+            }
+            let streams_idx = streams_idx.unwrap();
+
+            let args = &command[streams_idx + 1..];
+            if args.len() % 2 != 0 {
+                return RespValue::Error(
+                    "wrong number of arguments for 'xread' command".to_string(),
+                );
             }
 
-            match memory.xread(key_id) {
+            let num_streams = args.len() / 2;
+            let keys = &args[0..num_streams];
+            let ids = &args[num_streams..];
+
+            let mut key_id = Vec::new();
+            for i in 0..num_streams {
+                key_id.push((keys[i].clone(), ids[i].clone()));
+            }
+
+            match memory.xread(key_id.clone()) {
                 Ok(stream_values) => {
                     let mut response = Vec::new();
-                    for stream_value in stream_values {
+                    for (i, stream_value) in stream_values.iter().enumerate() {
                         let mut entries = Vec::new();
-                        for (id, fields) in stream_value.0 {
+                        for (id, fields) in &stream_value.0 {
                             let mut entry = Vec::new();
-                            entry.push(RespValue::BulkString(Some(id)));
+                            entry.push(RespValue::BulkString(Some(id.clone())));
                             let mut field_values = Vec::new();
                             for (field, value) in fields {
-                                field_values.push(RespValue::BulkString(Some(field)));
-                                field_values.push(RespValue::BulkString(Some(value)));
+                                field_values.push(RespValue::BulkString(Some(field.clone())));
+                                field_values.push(RespValue::BulkString(Some(value.clone())));
                             }
                             entry.push(RespValue::Array(field_values));
                             entries.push(RespValue::Array(entry));
                         }
                         let stream_response = vec![
-                            RespValue::BulkString(Some(command[2].clone())),
+                            RespValue::BulkString(Some(key_id[i].0.clone())),
                             RespValue::Array(entries),
                         ];
 
