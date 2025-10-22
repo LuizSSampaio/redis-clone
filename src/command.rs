@@ -260,33 +260,41 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
             }
         }
         "XREAD" => {
-            if command.len() < 4 {
+            if command.len() < 4 || command.len() % 2 != 0 {
                 return RespValue::Error(
                     "wrong number of arguments for 'xread' command".to_string(),
                 );
             }
 
-            let id = command[3].clone();
+            let mut key_id = Vec::new();
+            for index in (4..command.len()).step_by(2) {
+                key_id.push((command[index].clone(), command[index + 1].clone()));
+            }
 
-            match memory.xread(&command[2], id.clone()) {
-                Ok(stream_value) => {
-                    let mut entries = Vec::new();
-                    for (id, fields) in stream_value.0 {
-                        let mut entry = Vec::new();
-                        entry.push(RespValue::BulkString(Some(id)));
-                        let mut field_values = Vec::new();
-                        for (field, value) in fields {
-                            field_values.push(RespValue::BulkString(Some(field)));
-                            field_values.push(RespValue::BulkString(Some(value)));
+            match memory.xread(key_id) {
+                Ok(stream_values) => {
+                    let mut response = Vec::new();
+                    for stream_value in stream_values {
+                        let mut entries = Vec::new();
+                        for (id, fields) in stream_value.0 {
+                            let mut entry = Vec::new();
+                            entry.push(RespValue::BulkString(Some(id)));
+                            let mut field_values = Vec::new();
+                            for (field, value) in fields {
+                                field_values.push(RespValue::BulkString(Some(field)));
+                                field_values.push(RespValue::BulkString(Some(value)));
+                            }
+                            entry.push(RespValue::Array(field_values));
+                            entries.push(RespValue::Array(entry));
                         }
-                        entry.push(RespValue::Array(field_values));
-                        entries.push(RespValue::Array(entry));
+                        let stream_response = vec![
+                            RespValue::BulkString(Some(command[2].clone())),
+                            RespValue::Array(entries),
+                        ];
+
+                        response.push(RespValue::Array(stream_response));
                     }
-                    let stream_response = vec![
-                        RespValue::BulkString(Some(command[2].clone())),
-                        RespValue::Array(entries),
-                    ];
-                    RespValue::Array(vec![RespValue::Array(stream_response)])
+                    RespValue::Array(response)
                 }
                 Err(err) => RespValue::Error(err.to_string()),
             }
