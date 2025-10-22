@@ -59,6 +59,19 @@ impl StreamRecord {
         }
         Ok(StramValue(result))
     }
+
+    pub fn xread(&self, id: String) -> Result<StramValue, StreamRecordError> {
+        let id = id.try_into()?;
+
+        let mut result = BTreeMap::new();
+        for value in &self.value.0 {
+            let entry_id = StreamEntryID::parse_id(value.0, &self.last_id)?;
+            if entry_id > id {
+                result.insert(value.0.clone(), value.1.clone());
+            }
+        }
+        Ok(StramValue(result))
+    }
 }
 
 #[derive(Debug, Error)]

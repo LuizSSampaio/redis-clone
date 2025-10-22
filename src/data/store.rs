@@ -191,4 +191,17 @@ impl Store {
 
         Ok(stream_record.xrange(start, end)?)
     }
+
+    pub fn xread(&self, key: &str, id: String) -> anyhow::Result<StramValue> {
+        let entry = self
+            .entries
+            .get(key)
+            .ok_or_else(|| anyhow::anyhow!("no such key"))?;
+
+        let RecordType::Stream(stream_record) = &entry.record else {
+            anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
+        };
+
+        Ok(stream_record.xread(id)?)
+    }
 }
