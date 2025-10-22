@@ -192,16 +192,21 @@ impl Store {
         Ok(stream_record.xrange(start, end)?)
     }
 
-    pub fn xread(&self, key: &str, id: String) -> anyhow::Result<StramValue> {
-        let entry = self
-            .entries
-            .get(key)
-            .ok_or_else(|| anyhow::anyhow!("no such key"))?;
+    pub fn xread(&self, key_id: Vec<(String, String)>) -> anyhow::Result<Vec<StramValue>> {
+        let mut result = Vec::new();
+        for (key, id) in key_id {
+            let entry = self
+                .entries
+                .get(&key)
+                .ok_or_else(|| anyhow::anyhow!("no such key"))?;
 
-        let RecordType::Stream(stream_record) = &entry.record else {
-            anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
-        };
+            let RecordType::Stream(stream_record) = &entry.record else {
+                anyhow::bail!("WRONGTYPE Operation against a key holding the wrong kind of value");
+            };
 
-        Ok(stream_record.xread(id)?)
+            result.push(stream_record.xread(id)?);
+        }
+
+        Ok(result)
     }
 }
