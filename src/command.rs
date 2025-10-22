@@ -270,7 +270,7 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
 
             match memory.xread(&command[2], id.clone()) {
                 Ok(stream_value) => {
-                    let mut result = vec![RespValue::BulkString(Some(command[2].clone()))];
+                    let mut entries = Vec::new();
                     for (id, fields) in stream_value.0 {
                         let mut entry = Vec::new();
                         entry.push(RespValue::BulkString(Some(id)));
@@ -280,9 +280,13 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                             field_values.push(RespValue::BulkString(Some(value)));
                         }
                         entry.push(RespValue::Array(field_values));
-                        result.push(RespValue::Array(entry));
+                        entries.push(RespValue::Array(entry));
                     }
-                    RespValue::Array(result)
+                    let stream_response = vec![
+                        RespValue::BulkString(Some(command[2].clone())),
+                        RespValue::Array(entries),
+                    ];
+                    RespValue::Array(vec![RespValue::Array(stream_response)])
                 }
                 Err(err) => RespValue::Error(err.to_string()),
             }
