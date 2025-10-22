@@ -259,6 +259,34 @@ pub async fn handler(command: Vec<String>, memory: Arc<Store>) -> RespValue {
                 Err(err) => RespValue::Error(err.to_string()),
             }
         }
+        "XREAD" => {
+            if command.len() < 4 {
+                return RespValue::Error(
+                    "wrong number of arguments for 'xread' command".to_string(),
+                );
+            }
+
+            let id = command[3].clone();
+
+            match memory.xread(&command[2], id.clone()) {
+                Ok(stream_value) => {
+                    let mut result = vec![RespValue::BulkString(Some(command[2].clone()))];
+                    for (id, fields) in stream_value.0 {
+                        let mut entry = Vec::new();
+                        entry.push(RespValue::BulkString(Some(id)));
+                        let mut field_values = Vec::new();
+                        for (field, value) in fields {
+                            field_values.push(RespValue::BulkString(Some(field)));
+                            field_values.push(RespValue::BulkString(Some(value)));
+                        }
+                        entry.push(RespValue::Array(field_values));
+                        result.push(RespValue::Array(entry));
+                    }
+                    RespValue::Array(result)
+                }
+                Err(err) => RespValue::Error(err.to_string()),
+            }
+        }
         _ => RespValue::Error("unknown command".to_string()),
     }
 }
